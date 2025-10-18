@@ -1,11 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { View, StyleSheet } from "react-native";
 import { TextInput, Button, Text, IconButton } from "react-native-paper";
 import { useForm, Controller } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
+import * as WebBrowser from "expo-web-browser";
+import * as Google from "expo-auth-session/providers/google";
+import { signInWithCredential, GoogleAuthProvider, onAuthStateChanged } from "firebase/auth";
+import { auth } from "../firebase"; // Ajusta la ruta
 
-// Validaciones con Yup
+WebBrowser.maybeCompleteAuthSession();
+
+// Esquema de validación
 const schema = yup.object().shape({
   email: yup.string().email("Formato de correo incorrecto.").required("El correo es obligatorio."),
   password: yup.string().min(6, "La contraseña es demasiado corta.").required("La contraseña es obligatoria."),
@@ -13,6 +19,39 @@ const schema = yup.object().shape({
 
 export default function LoginScreen({ navigation }) {
   const [showPassword, setShowPassword] = useState(false);
+  const [user, setUser] = useState(null);
+
+  // Configuración de Google Auth con Expo
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    expoClientId: "902685275857-7cb01drot15k5cechdcn6naji89p2m11.apps.googleusercontent.com",
+    webClientId: "902685275857-7cb01drot15k5cechdcn6naji89p2m11.apps.googleusercontent.com",
+    androidClientId: "902685275857-ihlmbcsu31uddkih6mibg2egh49cc5ff.apps.googleusercontent.com",
+    iosClientId: "902685275857-j9a0g9kgkum4tamr0f8c9qc74bqdtq7l.apps.googleusercontent.com",
+  });
+
+  useEffect(() => {
+    if (response?.type === "success") {
+      const { authentication } = response;
+      const { idToken } = authentication;
+      if (idToken) {
+        const credential = GoogleAuthProvider.credential(idToken);
+        signInWithCredential(auth, credential).catch((err) => {
+          console.log("Error al autenticar con Firebase:", err);
+        });
+      }
+    }
+  }, [response]);
+
+  // ✅ Detectar usuario logueado
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+      if (user) {
+        navigation.replace("MainTabs");
+      }
+    });
+    return unsubscribe;
+  }, []);
 
   const {
     control,
@@ -23,18 +62,14 @@ export default function LoginScreen({ navigation }) {
   });
 
   const onSubmit = (data) => {
-    navigation.replace('MainTabs');
+    navigation.replace("MainTabs");
   };
 
   return (
     <View style={styles.container}>
-      {/* Icono superior */}
       <IconButton icon="information" size={60} iconColor="#2979FF" />
-
-      {/* Bienvenida */}
       <Text style={styles.title}>¡Bienvenido!</Text>
 
-      {/* Email */}
       <Controller
         control={control}
         name="email"
@@ -52,7 +87,6 @@ export default function LoginScreen({ navigation }) {
       />
       {errors.email && <Text style={styles.error}>{errors.email.message}</Text>}
 
-      {/* Password */}
       <Controller
         control={control}
         name="password"
@@ -88,13 +122,16 @@ export default function LoginScreen({ navigation }) {
         icon="google"
         textColor="black"
         style={styles.googleButton}
-        onPress={() => console.log("Google login")}
+        disabled={!request}
+        onPress={() => promptAsync()}
       >
         Acceder con Google
       </Button>
     </View>
   );
 }
+
+
 
 const styles = StyleSheet.create({
   container: {

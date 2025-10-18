@@ -2,6 +2,7 @@
   "expo": {
     "name": "FarmaMApp",
     "slug": "FarmaMApp",
+    "owner": "jjflores20",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/Logo.png",
@@ -13,9 +14,11 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.jjflores.farmamapp"
     },
     "android": {
+      "package": "com.jjflores.farmamapp",
       "adaptiveIcon": {
         "foregroundImage": "./assets/LogoSinfondo.png",
         "backgroundColor": "#2c245b"
@@ -24,6 +27,14 @@
     },
     "web": {
       "favicon": "./assets/Logo.png"
+    },
+    "scheme": "farmamapp",
+
+    "plugins": ["expo-web-browser"],
+    "extra": {
+      "eas": {
+        "projectId": "a2ac8a29-2c81-445c-92f1-31f253be6555"
+      }
     }
   }
 }
